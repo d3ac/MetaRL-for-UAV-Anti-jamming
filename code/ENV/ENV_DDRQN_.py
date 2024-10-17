@@ -472,7 +472,7 @@ class Environ(gym.Env):
                 self.jammers[i].jammer_direction.append(start_direction)
                 self.jammers[i].jammer_p.append(start_p)
 
-    def renew_neighbors_of_uavs(self):#不确定有用到
+    def renew_neighbors_of_uavs(self):
         for i in range(len(self.uavs)):
             self.uavs[i].neighbors = []
         z = np.array([[complex(c.position[0], c.position[1], c.position[2]) for c in self.uavs]])
@@ -653,7 +653,7 @@ class Environ(gym.Env):
                     if i==tra and j==rec:
                         continue
                     other_channel_list.append(self.uav_channels[i][j])      #排除自己通信信道的其他信道
-                    other_index_list.append(self.uav_pairs[i][j][0])        #排除自己簇头的其他簇头（但是还是有自己簇头的呀）
+                    other_index_list.append(self.uav_pairs[i][j][0])        #排除自己簇头的其他簇头
 
             tra_time, suc = self.compute_reward(tra, rec, other_channel_list, other_index_list)  # 传输时间
             self.rew_suc += suc
@@ -688,7 +688,7 @@ class Environ(gym.Env):
         self.t_uav += self.t_Rx
         self.t_jammer += self.t_Rx
         # self.jammer_channels_list = []
-        if np.floor_divide((self.t_jammer - self.t_Rx), self.t_dwell) == np.floor_divide(self.t_jammer, self.t_dwell) - 1: #这一步是要判断什么？是否达到切换干扰信道的时间
+        if np.floor_divide((self.t_jammer - self.t_Rx), self.t_dwell) == np.floor_divide(self.t_jammer, self.t_dwell) - 1: 
             # （干扰机时间-传输时间0.98）/干扰机扫频停留时间2.28 == 干扰机时间/干扰机扫频停留时间 - 1
             if self.type_of_interference == "saopin":
                 for i in range(self.n_jammer):
@@ -768,7 +768,7 @@ class Environ(gym.Env):
 
             # print("change_channels", self.jammer_channels)
 
-    # 更新簇头的位置，在无人机获知网络状态信息阶段，簇头无人机根据方向，delta距离来更新其位置【对这里的方位有点不太明白】
+    # 更新簇头的位置，在无人机获知网络状态信息阶段，簇头无人机根据方向，delta距离来更新其位置
     def renew_positions_of_chs(self):
         # ========================================================
         # This function update the position of each ch
