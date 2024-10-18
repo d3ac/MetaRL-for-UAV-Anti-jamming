@@ -7,7 +7,7 @@ This repository contains the code and detailed instructions for the patent "An A
 
 ![image1](./img/cover.png)
 
-We trained multiple models : DQN, PPO, DDQN, DQN-context, PPO-context, DDQN-context, RANDOM. The training result are shown below. You can find a full explanation of the images at `Patent draft.pdf`.
+We trained multiple models : DQN, PPO, DDQN, DQN-context, PPO-context, DDQN-context, RANDOM. The training result are shown below. You can find a full explanation of the images and the environment at `Patent draft.pdf`. 
 
 ![image2](./img/train_old.png)
 
