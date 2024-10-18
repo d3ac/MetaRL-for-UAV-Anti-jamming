@@ -31,3 +31,6 @@ no more special requirements,
 
 ## 3. Usage
 1. Clone the repository by `git clone https://github.com/d3ac/MetaRL-for-UAV-Anti-jamming` or download the zip file. Go to the code folder.
+2. run 'task_gen.py' to generate the task set, run `foldergen.py` to generate the folder to save the model and the training result.
+3. run 'DDQN.py', 'DDQM-context.py', 'RANDOM.py' to train the model, You can see how well the model is trained by running `draw.ipynb`.
+4. run 'DDQN-test.py', 'DDQN-context-test.py', 'RANDOM-test.py' to test the model, You can see the test result by running `draw_test.ipynb`.

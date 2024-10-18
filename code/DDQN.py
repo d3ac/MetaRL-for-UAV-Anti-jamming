@@ -36,8 +36,8 @@ steps = 0        #总步数
 train_frequency = 10   # 10步训练一次
 num_input = env.state_dim
 num_output = env.action_dim
-n_agent = env.n_cm
-path = './DDRQN'
+n_agent = env.n_ch
+path = './DDQN'
 ep_rewards = []
 energy = []
 hop = []
@@ -60,7 +60,7 @@ if __name__ == '__main__':
         task_idx = np.random.choice(train_task_list)
         task = train_task[task_idx]
         obs = env.reset(task)
-        for i in range(env.n_cm):
+        for i in range(env.n_ch):
             env.agents[i].buffer.reset()
         # ----------------- presample -----------------
         train_reward = 0
@@ -81,13 +81,15 @@ if __name__ == '__main__':
             if env.agents[0].buffer.is_available() and steps % train_frequency == 0:    # 随便检查一个的经验池即可
                 for i in range(n_agent):
                     env.agents[i].train()
+        with open(path + '/params.pkl', 'wb') as f:
+            pickle.dump(env.get_params(), f)
         
         # ------------------------------------------ set-testing ------------------------------------------
         params = env.get_params()
         task_idx = np.random.choice(test_task_list)
         task = test_task[task_idx]
         obs = env.reset(task)
-        for i in range(env.n_cm):
+        for i in range(env.n_ch):
             env.agents[i].buffer.reset()
         # ----------------- presample -----------------
         episode_reward = 0
