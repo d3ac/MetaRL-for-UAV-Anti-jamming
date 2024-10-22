@@ -38,7 +38,7 @@ episodes = 1000
 n_steps = 100
 batch_size = 16
 latent_dim = 64
-n_tasks = 30
+n_tasks = 5
 env = Environ(device=device, test=True)
 steps = 0        #总步数
 train_frequency = 40   # 10步训练一次

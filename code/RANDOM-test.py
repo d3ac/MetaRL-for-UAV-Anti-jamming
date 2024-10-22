@@ -137,7 +137,7 @@ if __name__ == "__main__":
     learning_rate = 2e-3
     buffer_len = int(20000)
     min_buffer_len = batch_size
-    episodes = 1500
+    episodes = 1000
     n_task = 5
     print_per_iter = 20
     target_update_period = 1000

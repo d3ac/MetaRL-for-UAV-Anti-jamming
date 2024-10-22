@@ -25,6 +25,8 @@ Higher communication success rate can be achieved under the same frequency hoppi
 
 ![image3](./img/test_patent.png)
 
+The above results are out of date, please check the new results in `/code/draw.ipynb`.
+
 ## 2. Installation
 
 no more special requirements, 
