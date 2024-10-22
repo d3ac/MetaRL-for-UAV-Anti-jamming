@@ -27,7 +27,7 @@ def get_decay(epi_iter):
     return decay
 
 # ------------------------ initialize ----------------------------
-n_episode = 4000
+n_episode = 2000
 n_steps = 200
 n_pre_train = 200
 env = Environ()
@@ -63,8 +63,23 @@ if __name__ == '__main__':
         for i in range(env.n_ch):
             env.agents[i].buffer.reset()
         # ----------------- presample -----------------
+        episode_reward = 0
+        episode_energy = 0
+        episode_jump = 0
+        episode_suc = 0
         train_reward = 0
-        # ----------------- presample -----------------
+        # # ----------------- presample -----------------
+        for step in range(64):
+            action_all = [[] for _ in range(n_agent)]
+            obs = env.get_state()
+
+            for i in range(n_agent):
+                action_all[i] = env.agents[i].get_action(obs[i], get_decay(i_episode))
+            obs_, r, terminal, info = env.step(action_all)
+            for i in range(n_agent):
+                env.agents[i].remember(obs[i], action_all[i], r.sum() / n_agent, obs_[i])
+            env.clear_reward()
+
         for step in range(n_steps):
             action_all = [[] for _ in range(n_agent)]
             obs = env.get_state()
@@ -75,66 +90,21 @@ if __name__ == '__main__':
             for i in range(n_agent):
                 env.agents[i].remember(obs[i], action_all[i], r.sum() / n_agent, obs_[i])
             train_reward += (r.sum(axis=0) / n_agent)
+            e, j, s = env.reward_details()
+            episode_energy += e
+            episode_jump += j
+            episode_suc += s
             env.clear_reward()
-
             steps += 1
             if env.agents[0].buffer.is_available() and steps % train_frequency == 0:    # 随便检查一个的经验池即可
                 for i in range(n_agent):
                     env.agents[i].train()
         with open(path + '/params.pkl', 'wb') as f:
             pickle.dump(env.get_params(), f)
-        
-        # ------------------------------------------ set-testing ------------------------------------------
-        params = env.get_params()
-        task_idx = np.random.choice(test_task_list)
-        task = test_task[task_idx]
-        obs = env.reset(task)
-        for i in range(env.n_ch):
-            env.agents[i].buffer.reset()
-        # ----------------- presample -----------------
-        episode_reward = 0
-        episode_energy = 0
-        episode_jump = 0
-        episode_suc = 0
-        test_reward = 0
 
-        for step in range(n_pre_train):
-            action_all = [[] for _ in range(n_agent)]
-            obs = env.get_state()
-
-            for i in range(n_agent):
-                action_all[i] = env.agents[i].get_action(obs[i], get_decay(i_episode))
-            obs_, r, terminal, info = env.step(action_all)
-            for i in range(n_agent):
-                env.agents[i].remember(obs[i], action_all[i], r.sum() / n_agent, obs_[i])
-            env.clear_reward()
-        # ----------------- presample -----------------
-        for step in range(n_steps):
-            action_all = [[] for _ in range(n_agent)]
-            obs = env.get_state()
-
-            for i in range(n_agent):
-                action_all[i] = env.agents[i].get_action(obs[i], get_decay(i_episode))
-            obs_, r, terminal, info = env.step(action_all)
-            for i in range(n_agent):
-                env.agents[i].remember(obs[i], action_all[i], r.sum() / n_agent, obs_[i])
-            test_reward += (r.sum(axis=0) / n_agent)
-            e, j, s = env.reward_details()
-            episode_energy += e
-            episode_jump += j
-            episode_suc += s
-            env.clear_reward()
-
-            steps += 1
-            if env.agents[0].buffer.is_available() and steps % train_frequency == 0:    # 随便检查一个的经验池即可
-                for i in range(n_agent):
-                    env.agents[i].train()
-        env.load_params(params)
-
-        Trange.set_postfix(train_score=train_reward, test_score=test_reward, epsilon=get_decay(i_episode) * 100)
+        Trange.set_postfix(train_score=train_reward, epsilon=get_decay(i_episode) * 100)
         
         train_score_list.append(train_reward)
-        test_score_list.append(test_reward)
 
         ep_rewards.append(episode_reward)
         energy.append(episode_energy)
@@ -145,5 +115,5 @@ if __name__ == '__main__':
         np.save(path + '/hop.npy', hop)
         np.save(path + '/suc.npy', suc)
 
-        DataFrame = pd.DataFrame([train_score_list, test_score_list], index = ['train', 'test']).T
+        DataFrame = pd.DataFrame([train_score_list, train_score_list], index = ['train', 'test']).T
         DataFrame.to_csv(path + '/reward.csv', index=False)

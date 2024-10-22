@@ -18,7 +18,7 @@ def setup_seed(seed):
     random.seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-setup_seed(0)
+setup_seed(1)
 
 def get_decay(epi_iter):
     decay = math.pow(0.98, epi_iter)  # math.pow(a,b) a的b次方
@@ -27,7 +27,7 @@ def get_decay(epi_iter):
     return decay
 
 # ------------------------ initialize ----------------------------
-episodes = 3000
+episodes = 1000
 n_tasks = 10
 n_steps = 100
 env = Environ()
@@ -134,10 +134,10 @@ if __name__ == '__main__':
             # suc.append(episode_suc)
             suc[i_episode] += episode_suc
 
-        np.save(path + '/rew.npy', ep_rewards/(N_TASK+1))
-        np.save(path + '/energy.npy', energy/(N_TASK+1))
-        np.save(path + '/hop.npy', hop/(N_TASK+1))
-        np.save(path + '/suc.npy', suc/(N_TASK+1))
+            np.save(path + '/rew.npy', ep_rewards/(N_TASK+1))
+            np.save(path + '/energy.npy', energy/(N_TASK+1))
+            np.save(path + '/hop.npy', hop/(N_TASK+1))
+            np.save(path + '/suc.npy', suc/(N_TASK+1))
 
-        DataFrame = pd.DataFrame([train_score_list, test_score_list/(N_TASK+1)], index = ['train', 'test']).T
-        DataFrame.to_csv(path + '/reward.csv', index=False)
+            DataFrame = pd.DataFrame([train_score_list, test_score_list/(N_TASK+1)], index = ['train', 'test']).T
+            DataFrame.to_csv(path + '/reward.csv', index=False)

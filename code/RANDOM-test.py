@@ -23,7 +23,7 @@ def setup_seed(seed):
     random.seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-setup_seed(0)
+setup_seed(520)
 
 # Q_network
 class Q_net(nn.Module):
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     learning_rate = 2e-3
     buffer_len = int(20000)
     min_buffer_len = batch_size
-    episodes = 3000
+    episodes = 1500
     n_task = 5
     print_per_iter = 20
     target_update_period = 1000

@@ -18,7 +18,7 @@ def setup_seed(seed):
     random.seed(seed)
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-setup_seed(0)
+setup_seed(520)
 
 def get_decay(epi_iter):
     decay = math.pow(0.98, epi_iter)  # math.pow(a,b) a的b次方
@@ -34,12 +34,12 @@ def get_context(context_list, batch=1, device=torch.device("cuda:0")):
 # ------------------------ initialize ----------------------------
 
 device = torch.device("cuda:0")
-episodes = 3000
+episodes = 1000
 n_steps = 100
 batch_size = 16
-latent_dim = 5
-n_tasks = 1
-env = Environ(device=device)
+latent_dim = 64
+n_tasks = 30
+env = Environ(device=device, test=True)
 steps = 0        #总步数
 train_frequency = 40   # 10步训练一次
 num_input = env.state_dim
@@ -60,6 +60,12 @@ for i in range(episodes):
     energy.append(0)
     hop.append(0)
     suc.append(0)
+train_score_list = np.array(train_score_list)
+test_score_list = np.array(test_score_list)
+ep_rewards = np.array(ep_rewards)
+energy = np.array(energy)
+hop = np.array(hop)
+suc = np.array(suc)
 
 with open('tasks.pkl', 'rb') as f:
     tasks = pickle.load(f)
@@ -71,7 +77,7 @@ test_task_list = list(range(len(test_task)))
 if __name__ == '__main__':
     steps = 0
     TR = tqdm.tqdm(range(n_tasks))
-    for _ in TR:
+    for N_task in TR:
         Trange = tqdm.tqdm(range(episodes))
         with open(path_pre + '/params.pkl', 'rb') as f:
             params = pickle.load(f)
@@ -85,6 +91,19 @@ if __name__ == '__main__':
             hidden = (torch.zeros(2, 1, 128).float().to(device), torch.zeros(2, 1, 128).float().to(device))
             hidden_all.append(hidden)
         context_list = [[] for _ in range(env.n_ch)]
+
+        for i in range(latent_dim):
+            action_all = [[] for _ in range(n_agent)]
+            obs = env.get_state()
+            for j in range(n_agent):
+                action_all[j] = np.random.randint(0, env.action_dim)
+            obs_, r, terminal, info = env.step(action_all)
+
+            for j in range(n_agent):
+                env.agents[j].remember(obs[j], action_all[j], r.sum() / n_agent, obs_[j])
+                context_list[j].append(torch.concat((torch.tensor(obs[j]), torch.tensor(obs_[j]), torch.tensor([r[j]]).to(torch.float32), env.decomposition_action_output(action_all[j]).to(torch.float32))))
+            env.clear_reward()
+
         for i_episode in Trange:
             # ------------------------------------------ set-testing ------------------------------------------
             obs = env.reset(task)
@@ -94,18 +113,6 @@ if __name__ == '__main__':
             episode_jump = 0
             episode_suc = 0
             test_reward = 0
-
-            for i in range(2*latent_dim):
-                action_all = [[] for _ in range(n_agent)]
-                obs = env.get_state()
-                for j in range(n_agent):
-                    action_all[j] = np.random.randint(0, env.action_dim)
-                obs_, r, terminal, info = env.step(action_all)
-
-                for j in range(n_agent):
-                    env.agents[j].remember(obs[j], action_all[j], r.sum() / n_agent, obs_[j])
-                    context_list[j].append(torch.concat((torch.tensor(obs[j]), torch.tensor(obs_[j]), torch.tensor([r[j]]).to(torch.float32), env.decomposition_action_output(action_all[j]).to(torch.float32))))
-                env.clear_reward()
 
             # ----------------- presample -----------------
             for step in range(n_steps):
@@ -135,19 +142,20 @@ if __name__ == '__main__':
             # train_score_list.append(train_reward)
             train_score_list[i_episode] += 0
             # test_score_list.append(test_reward)
-            test_score_list[i_episode] += test_reward / n_tasks
+            test_score_list[i_episode] += test_reward
             # ep_rewards.append(episode_reward)
             ep_rewards[i_episode] += 0
             # energy.append(episode_energy)
-            energy[i_episode] += episode_energy / n_tasks
+            energy[i_episode] += episode_energy
             # hop.append(episode_jump)
-            hop[i_episode] += episode_jump / n_tasks
+            hop[i_episode] += episode_jump
             # suc.append(episode_suc)
-            suc[i_episode] += episode_suc / n_tasks
-        np.save(path + '/rew.npy', ep_rewards)
-        np.save(path + '/energy.npy', energy)
-        np.save(path + '/hop.npy', hop)
-        np.save(path + '/suc.npy', suc)
+            suc[i_episode] += episode_suc
 
-        DataFrame = pd.DataFrame([train_score_list, test_score_list], index = ['train', 'test']).T
-        DataFrame.to_csv(path + '/reward.csv', index=False)
+            np.save(path + '/rew.npy', ep_rewards/(N_task+1))
+            np.save(path + '/energy.npy', energy/(N_task+1))
+            np.save(path + '/hop.npy', hop/(N_task+1))
+            np.save(path + '/suc.npy', suc/(N_task+1))
+
+            DataFrame = pd.DataFrame([train_score_list, test_score_list/(N_task+1)], index = ['train', 'test']).T
+            DataFrame.to_csv(path + '/reward.csv', index=False)

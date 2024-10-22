@@ -196,11 +196,11 @@ if __name__ == "__main__":
             steps += 1
             a = [0 for _ in range(env.n_ch)]
             for j in range(env.n_ch):
-                a[j] = Q[j].sample_action(torch.from_numpy(obs[j]).float().to(device), epsilon)
+                a[j] = np.random.randint(0, env.action_dim)
 
             next_obs, r, done, _ = env.step(a)
-            for j in range(env.n_ch):
-                replay_buffer[j].put(obs[j], a[j], r.sum() / env.n_ch, next_obs[j], done)
+            # for j in range(env.n_ch):
+            #     replay_buffer[j].put(obs[j], a[j], r.sum() / env.n_ch, next_obs[j], done)
             obs = next_obs
 
             train_score += r.sum() / env.n_ch
@@ -210,65 +210,21 @@ if __name__ == "__main__":
             episode_suc += s
             env.clear_reward()
 
-            if len(replay_buffer[0]) >= min_buffer_len:
-                if (t + 1) % update_period == 0:
-                    for j in range(env.n_ch):
-                        train(Q[j], Q_target[j], replay_buffer[j], device, optimizer=optimizer[j], batch_size=batch_size, learning_rate=learning_rate)
-                if (steps + 1) % target_update_period == 0:
-                    for j in range(env.n_ch):
-                        for target_param, local_param in zip(Q_target[j].parameters(), Q[j].parameters()):
-                            target_param.data.copy_(local_param.data)
+            # if len(replay_buffer[0]) >= min_buffer_len:
+            #     if (t + 1) % update_period == 0:
+            #         for j in range(env.n_ch):
+            #             train(Q[j], Q_target[j], replay_buffer[j], device, optimizer=optimizer[j], batch_size=batch_size, learning_rate=learning_rate)
+            #     if (steps + 1) % target_update_period == 0:
+            #         for j in range(env.n_ch):
+            #             for target_param, local_param in zip(Q_target[j].parameters(), Q[j].parameters()):
+            #                 target_param.data.copy_(local_param.data)
             if done:
                 break
-
-        # ------------------------------------------ testing ------------------------------------------
-        Q_params = []
-        for i in range(env.n_ch):
-            Q_params.append(Q[i].state_dict())
-
-        for i in range(env.n_ch):
-            replay_buffer[i].clear()
-
-        task_idx = np.random.choice(test_task_list)
-        task = test_task[task_idx]
-        obs = env.reset(task)
-        test_score = 0
-        episode_energy = 0
-        episode_jump = 0
-        episode_suc = 0
-        a = []
-        env.t_jammer = - env.jammer_start
-
-        for t in range(max_step):
-            a = [0 for _ in range(env.n_ch)]
-            for j in range(env.n_ch):
-                a[j] = Q[j].sample_action(torch.from_numpy(obs[j]).float().to(device), epsilon)
-
-            next_obs, r, done, _ = env.step(a)
-            for j in range(env.n_ch):
-                replay_buffer[j].put(obs[j], a[j], r.sum() / env.n_ch, next_obs[j], done)
-            obs = next_obs
-
-            test_score += r.sum() / env.n_ch
-            e, j, s = env.reward_details()
-            episode_energy += e
-            episode_jump += j
-            episode_suc += s
-            env.clear_reward()
-
-            if len(replay_buffer[0]) >= min_buffer_len:
-                if (t + 1) % update_period == 0:
-                    for j in range(env.n_ch):
-                        train(Q[j], Q_target[j], replay_buffer[j], device, optimizer=optimizer[j], batch_size=batch_size, learning_rate=learning_rate)
-            if done:
-                break
-        for i in range(env.n_ch):
-            Q[i].load_state_dict(Q_params[i])
 
         # ------------------------------------------ saving ------------------------------------------
-        Trange.set_postfix(score=train_score, test_score=test_score, epsilon=epsilon * 100)
+        Trange.set_postfix(score=train_score, test_score=train_score, epsilon=epsilon * 100)
         train_score_list.append(train_score)
-        test_score_list.append(test_score)
+        test_score_list.append(train_score)
 
         epsilon = max(eps_end, eps_decay ** i_step)  # Linear annealing
         lmz.append(train_score)
