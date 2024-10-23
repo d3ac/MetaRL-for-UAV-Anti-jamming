@@ -120,14 +120,16 @@ class DDRQN(nn.Module):
         self.lstm_N_layer = 2   # number of layers of LSTM
         self.input = state   #网络总输入:每个无人机簇的状态，8个快衰落（2个成员x4个信道）、6个信道（6个成员）、6个功率（6个成员）、1个干扰机信道状态
         self.output = action     #网络总输出
-        self.fc1 = nn.Linear(self.input, 32)
+        self.lstm = nn.LSTM(input_size=self.lstm_i_dim, hidden_size=self.lstm_h_dim, num_layers=self.lstm_N_layer)
+        self.fc1 = nn.Linear(self.input+self.lstm_h_dim, 32)
         self.fc2 = nn.Linear(32, 32)
         self.fc3 = nn.Linear(32, self.output)
 
-    def forward(self, x):
-        h2 = F.relu(self.fc1(x))
+    def forward(self, x, hidden):
+        h1, new_hidden = self.lstm(x, hidden)
+        h2 = F.relu(self.fc1(torch.cat((x, h1), dim=2)))
         h3 = F.relu(self.fc2(h2))
-        return self.fc3(h3)
+        return self.fc3(h3), new_hidden
 
 class ReplayMemory(object):
     def __init__(self, max_epi_num=50, max_epi_len=300):
@@ -177,7 +179,7 @@ class Agent:
         next_state = np.array(next_state)
         self.buffer.remember(state, action, reward, next_state)
 
-    def train(self, batch_size=32):
+    def train(self, hidden, batch_size=32):
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.target_net.load_state_dict(self.eval_net.state_dict())
         self.learn_step_counter += 1
@@ -195,9 +197,9 @@ class Agent:
                 obs_next_list.append(memo[i][3])
             obs_list = torch.FloatTensor((np.array(obs_list)).reshape(-1, 1, self.eval_net.input))
             obs_next_list = torch.FloatTensor((np.array(obs_next_list)).reshape(-1, 1, self.eval_net.input))
-            q_eval = self.eval_net.forward(obs_list)
-            q_next = self.target_net.forward(obs_next_list)
-            q_eval4next = self.eval_net.forward(obs_next_list)
+            q_eval, _ = self.eval_net.forward(obs_list, hidden)
+            q_next, _ = self.target_net.forward(obs_next_list, hidden)
+            q_eval4next, _ = self.eval_net.forward(obs_next_list, hidden)
             q_eval4next_s = np.squeeze(q_eval4next.detach().numpy())
 
             q_next_s = q_next.squeeze()
@@ -218,17 +220,17 @@ class Agent:
             loss.backward() # 反向传播求梯度
             self.optimizer.step() # 更新所有参数
 
-    def get_action(self, obs, epsilon):
+    def get_action(self, obs, hidden, epsilon):
         obs = np.array(obs)
         obs = obs.reshape(-1, 1, self.eval_net.input)
         obs = torch.FloatTensor(obs)#转换为一个向量
         if random.random() > epsilon:
-            q = self.eval_net.forward(obs)
+            q, new_hidden = self.eval_net.forward(obs, hidden)
             action = q[0].max(1)[1].data[0].item()
         else:
-            q = self.eval_net.forward(obs)
+            q, new_hidden = self.eval_net.forward(obs, hidden)
             action = random.randint(0, self.N_action-1)
-        return action
+        return action, new_hidden
     
     def get_params(self):
         return (self.eval_net.state_dict(), self.target_net.state_dict())

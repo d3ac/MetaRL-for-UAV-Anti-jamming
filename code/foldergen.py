@@ -1,19 +1,19 @@
 import os
 
-if not os.path.exists('DDQN'):
-    os.makedirs('DDQN')
+if not os.path.exists('DDRQN'):
+    os.makedirs('DDRQN')
 
-if not os.path.exists('DDQN-context'):
-    os.makedirs('DDQN-context')
+if not os.path.exists('DDRQN-context'):
+    os.makedirs('DDRQN-context')
 
 if not os.path.exists('RANDOM'):
     os.makedirs('RANDOM')
 
-if not os.path.exists('DDQN-test'):
-    os.makedirs('DDQN-test')
+if not os.path.exists('DDRQN-test'):
+    os.makedirs('DDRQN-test')
 
-if not os.path.exists('DDQN-context-test'):
-    os.makedirs('DDQN-context-test')
+if not os.path.exists('DDRQN-context-test'):
+    os.makedirs('DDRQN-context-test')
 
 if not os.path.exists('RANDOM-test'):
     os.makedirs('RANDOM-test')
