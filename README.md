@@ -31,11 +31,14 @@ The above results are out of date, please check the new results in `/code/draw.i
 
 Please note that DDRQN is actually just DDQN plus an LSTM module, we later made a change in the name and added "R", all the "DDQN" in the above picture refers to DDRQN, the specific visible code.
 
+![234](img/pipeline.jpg)
+
 ## 2. Installation
 
 no more special requirements, 
 
 ## 3. Usage
+
 1. Clone the repository by `git clone https://github.com/d3ac/MetaRL-for-UAV-Anti-jamming` or download the zip file. Go to the code folder.
 2. run 'task_gen.py' to generate the task set, run `foldergen.py` to generate the folder to save the model and the training result.
 3. run 'DDRQN.py', 'DDQM-context.py', 'RANDOM.py' to train the model, You can see how well the model is trained by running `draw.ipynb`.
